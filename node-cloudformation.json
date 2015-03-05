@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "Cloud formation script for the creation of a node based microservice stack that uses naught for uptime and deploys",
+  "Description": "Cloud formation script for the creation of a node based microservice stack that uses pm2 for uptime and deploys",
 
   "Parameters": {
     "Microservice": {
@@ -24,22 +24,12 @@
       "Type": "AWS::EC2::KeyPair::KeyName",
       "ConstraintDescription": "must be the name of an existing EC2 KeyPair."
     },
-
     "InstanceType": {
       "Description": "WebServer EC2 instance type",
       "Type": "String",
       "Default": "t1.micro",
       "AllowedValues": ["t1.micro", "t2.micro", "t2.small", "t2.medium", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
       "ConstraintDescription": "must be a valid EC2 instance type."
-    },
-    "SSHLocation": {
-      "Description": "The IP address range that can be used to SSH to the EC2 instances",
-      "Type": "String",
-      "MinLength": "9",
-      "MaxLength": "18",
-      "Default": "0.0.0.0/0",
-      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
     },
     "MicroservicePort": {
       "Description": "The port this microservice listens on",
@@ -308,6 +298,29 @@
         },
         "LoadBalancerNames": [{
           "Ref": "ElasticLoadBalancer"
+        }],
+        "Tags": [{
+          "PropagateAtLaunch" : "true",
+          "Key": "Microservice",
+          "Value": {
+            "Ref": "Microservice"
+          }
+        }, {
+          "PropagateAtLaunch" : "true",
+          "Key": "Purpose",
+          "Value": "Microservice"
+        }, {
+          "PropagateAtLaunch" : "true",
+          "Key": "MicroserviceApiVersion",
+          "Value": {
+            "Ref": "MicroserviceApiVersion"
+          }
+        }, {
+          "PropagateAtLaunch" : "true",
+          "Key": "Environment",
+          "Value": {
+            "Ref": "Environment"
+          }
         }]
       },
       "CreationPolicy": {
@@ -365,6 +378,7 @@
           "Fn::Base64": {
             "Fn::Join": ["", [
               "#!/bin/bash -xe\n",
+              "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n",
               "yum update -y aws-cfn-bootstrap\n",
 
               "/opt/aws/bin/cfn-init -v ",
@@ -381,19 +395,18 @@
               "ulimit -n 100000\n",
 
               "yum install -y nodejs npm --enablerepo=epel\n",
-              "npm install -g naught\n",
+              "npm install -g pm2@0.12.7\n",
               "mkdir /microservice\n",
               "mkdir /microservice/origin\n",
               "ln -s /microservice/origin /microservice/current\n",
-              "curl -L ", " https://api.github.com/repos/", {
-                "Ref": "GitHubRepository"
-              }, "/tarball > /microservice/origin.tar.gz\n",
+              "curl -u ", { "Ref": "GitHubAccessToken" }  , ":x-oauth-basic -L https://github.com/", { "Ref": "GitHubRepository" }  ,"/archive/master.tar.gz > /microservice/origin.tar.gz\n",
               "tar -xzf /microservice/origin.tar.gz --directory /microservice/origin --strip-components=1\n",
               "rm /microservice/origin.tar.gz\n",
               "cd /microservice/origin\n",
               "npm install --production \n",
-              "# naught start /microservice/current/index.js",
-
+              "chown -R ec2-user /microservice\n",
+              "chown -R ec2-user /microservice\n",
+              "runuser -l ec2-user -c 'pm2 start /microservice/current/index.js'\n",
 
               "/opt/aws/bin/cfn-signal -e $? ",
               "         --stack ", {
@@ -424,7 +437,7 @@
           "Protocol": "HTTP"
         }],
         "HealthCheck": {
-          "Target": "HTTP:80/",
+          "Target": "HTTP:5000/",
           "HealthyThreshold": "3",
           "UnhealthyThreshold": "5",
           "Interval": "30",
@@ -435,6 +448,9 @@
           "Value": {
             "Ref": "Microservice"
           }
+        }, {
+          "Key": "Purpose",
+          "Value": "Microservice"
         }, {
           "Key": "MicroserviceApiVersion",
           "Value": {
@@ -457,19 +473,16 @@
           "IpProtocol": "tcp",
           "FromPort": "22",
           "ToPort": "22",
-          "CidrIp": {
-            "Ref": "SSHLocation"
-          }
+          "CidrIp": "0.0.0.0/0"
         }, {
           "IpProtocol": "tcp",
-          "FromPort": "80",
-          "ToPort": "80",
-          "SourceSecurityGroupOwnerId": {
-            "Fn::GetAtt": ["ElasticLoadBalancer", "SourceSecurityGroup.OwnerAlias"]
+          "FromPort": {
+            "Ref": "MicroservicePort"
           },
-          "SourceSecurityGroupName": {
-            "Fn::GetAtt": ["ElasticLoadBalancer", "SourceSecurityGroup.GroupName"]
-          }
+          "ToPort": {
+            "Ref": "MicroservicePort"
+          },
+          "CidrIp": "0.0.0.0/0"
         }]
       }
     }
