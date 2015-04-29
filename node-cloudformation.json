@@ -1,7 +1,7 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Description": "Cloud formation script for the creation of a node based microservice stack that uses pm2 for uptime and deploys",
+  "Description": "Cloud formation script for the creation of a node based microservice stack that uses naught for uptime and deploys",
 
   "Parameters": {
     "Microservice": {
@@ -18,6 +18,16 @@
       "Description": "The GitHub repository for this node server",
       "Type": "String",
       "ConstraintDescription": "must be a valid GitHub repository name."
+    },
+    "AWSAccessKeyId": {
+      "Description": "The AWS access key to set AWS_ACCESS_KEY_ID to",
+      "Type": "String",
+      "ConstraintDescription": "must be the access key id of a valid IAM User."
+    },
+    "AWSSecretAccessKeyId": {
+      "Description": "The AWS secret access key id to set AWS_SECRET_ACCESS_KEY to",
+      "Type": "String",
+      "ConstraintDescription": "must be the secret access key id of a valid IAM User."
     },
     "KeyName": {
       "Description": "The EC2 Key Pair to allow SSH access to the instances",
@@ -406,6 +416,9 @@
               "npm install --production \n",
               "chown -R ec2-user /microservice\n",
               "chown -R ec2-user /microservice\n",
+              "echo 'export NODE_ENV=production' >> /home/ec2-user/.bashrc\n",
+              "echo 'export AWS_ACCESS_KEY_ID=", { "Ref": "AWSAccessKeyId" }, "' >> /home/ec2-user/.bashrc\n",
+              "echo 'export AWS_SECRET_ACCESS_KEY=", { "Ref": "AWSSecretAccessKeyId" }, "' >> /home/ec2-user/.bashrc\n",
               "runuser -l ec2-user -c 'naught start /microservice/current/index.js'\n",
 
               "/opt/aws/bin/cfn-signal -e $? ",
