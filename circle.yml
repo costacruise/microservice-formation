@@ -10,4 +10,4 @@ deployment:
   production:
     branch: master
     commands:
-      - aws s3 sync config s3://microservice-formation --delete 
+      - aws s3 sync . s3://microservice-formation 
