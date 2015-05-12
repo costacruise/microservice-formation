@@ -10,4 +10,4 @@ deployment:
   production:
     branch: master
     commands:
-      - aws s3 sync . s3://microservice-formation 
+      - aws s3 cp node-cloudformation.json s3://microservice-formation 
