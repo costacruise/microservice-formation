@@ -341,7 +341,7 @@
           "PropagateAtLaunch" : "true",
           "Key": "Name",
           "Value": {
-            "Ref": "Microservice"
+            "Ref": "AWS::StackName"
           }
         }]
       },
