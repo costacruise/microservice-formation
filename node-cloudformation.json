@@ -336,6 +336,7 @@
           "Key": "Environment",
           "Value": {
             "Ref": "Environment"
+          }
         }, {
           "PropagateAtLaunch" : "true",
           "Key": "Name",
