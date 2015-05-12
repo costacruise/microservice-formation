@@ -18,7 +18,7 @@ env.hosts = set_hosts()
 def deploy():
   with cd('/microservice'):
     run('mkdir -p ' + env.sha);
-    rsync_project(local_dir='.', remote_dir='/microservice/' + env.sha, exclude=['node_modules', '.git', 'test', 'fabric', 'coverage', '.gitignore', '.jshintrc', 'circle.yml']);
+    rsync_project(local_dir='.', remote_dir='/microservice/' + env.sha, exclude=['node_modules', '.git', 'test', 'fabric', 'coverage', '.gitignore', '.jshintrc', 'circle.yml', 'fabfile.py']);
   with cd('/microservice/' + env.sha):
     run('npm install --production')
 
