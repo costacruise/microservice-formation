@@ -80,6 +80,10 @@
       "Type": "String",
       "Default": "",
       "ConstraintDescription": "must be a valid string"
+    },
+    "SubnetId" : {
+      "Description" : "The Subnet to which attach the EC2 instances",
+      "Type": "AWS::EC2::Subnet::Id"
     }
   },
 
@@ -499,6 +503,7 @@
     "InstanceSecurityGroup": {
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
+        "Subnet" : { "Ref" : "SubnetId" },
         "GroupDescription": "Enable SSH access and HTTP from the load balancer only",
         "SecurityGroupIngress": [{
           "IpProtocol": "tcp",
