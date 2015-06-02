@@ -80,6 +80,18 @@
       "Type": "String",
       "Default": "",
       "ConstraintDescription": "must be a valid string"
+    },
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id",
+      "Description": "VpcId of your existing Virtual Private Cloud (VPC)",
+      "ConstraintDescription": "must be the VPC Id of an existing Virtual Private Cloud.",
+      "Default": ""
+    },
+    "Subnets": {
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Description": "The list of SubnetIds in your Virtual Private Cloud (VPC)",
+      "ConstraintDescription": "must be a list of an existing subnets in the selected Virtual Private Cloud.",
+      "Default": ""
     }
   },
 
@@ -300,8 +312,8 @@
     "WebServerGroup": {
       "Type": "AWS::AutoScaling::AutoScalingGroup",
       "Properties": {
-        "AvailabilityZones": {
-          "Fn::GetAZs": ""
+        "VPCZoneIdentifier": {
+          "Ref": "Subnets"
         },
         "LaunchConfigurationName": {
           "Ref": "LaunchConfig"
@@ -451,8 +463,8 @@
     "ElasticLoadBalancer": {
       "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
       "Properties": {
-        "AvailabilityZones": {
-          "Fn::GetAZs": ""
+        "Subnets": {
+          "Ref": "Subnets"
         },
         "CrossZone": "true",
         "Listeners": [{
@@ -500,6 +512,9 @@
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "Enable SSH access and HTTP from the load balancer only",
+        "VpcId": {
+          "Ref": "VpcId"
+        },
         "SecurityGroupIngress": [{
           "IpProtocol": "tcp",
           "FromPort": "22",
