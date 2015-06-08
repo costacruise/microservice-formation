@@ -92,6 +92,12 @@
       "Description": "The list of SubnetIds in your Virtual Private Cloud (VPC)",
       "ConstraintDescription": "must be a list of an existing subnets in the selected Virtual Private Cloud.",
       "Default": ""
+    },
+    "NpmAuthToken": {
+      "Type": "String",
+      "Description": "The NPM auth token you can find in your ~/.npmrc",
+      "ConstraintDescription": "must be a valid auth token to access the private repos",
+      "Default": ""
     }
   },
 
@@ -427,23 +433,37 @@
               "echo '* hard nofile 100000' | tee -a /etc/security/limits.conf\n",
               "echo '* soft nofile 100000' | tee -a /etc/security/limits.conf\n",
               "ulimit -n 100000\n",
-
-              "yum install -y nodejs-0.10.33 npm-1.3.6 --enablerepo=epel\n",
+              
+              "yum -y groupinstall 'Development Tools'\n",
+              "cd /opt \n",
+              "wget http://nodejs.org/dist/v0.12.4/node-v0.12.4-linux-x64.tar.gz \n",
+              "tar -xzf /opt/node-v0.12.4-linux-x64.tar.gz \n",
+              "rm /opt/node-v0.12.4-linux-x64.tar.gz \n",
+              "ln -s /opt/node-v0.12.4-linux-x64/bin/node /usr/bin/node \n",
+              "ln -s /opt/node-v0.12.4-linux-x64/bin/npm /usr/bin/npm \n",
+              
               "npm install -g naught@1.5.0\n",
+              
               "mkdir /microservice\n",
               "mkdir /microservice/origin\n",
               "ln -s /microservice/origin /microservice/current\n",
               "curl -u ", { "Ref": "GitHubAccessToken" }  , ":x-oauth-basic -L https://github.com/", { "Ref": "GitHubRepository" }  ,"/archive/master.tar.gz > /microservice/origin.tar.gz\n",
               "tar -xzf /microservice/origin.tar.gz --directory /microservice/origin --strip-components=1\n",
               "rm /microservice/origin.tar.gz\n",
-              "cd /microservice/origin\n",
-              "npm install --production \n",
+              
               "chown -R ec2-user /microservice\n",
-              "chown -R ec2-user /microservice\n",
+              
+              "echo '//registry.npmjs.org/:_authToken=",{"Ref": "NpmAuthToken"},"' > /home/ec2-user/.npmrc \n",
+              "chown ec2-user /home/ec2-user/.npmrc \n",
+              "runuser -l ec2-user -c 'cd /microservice/origin && npm install --production' \n",
+              
+              "\n",
+              
               "echo 'export NODE_ENV=production' >> /home/ec2-user/.bashrc\n",
               "echo 'export AWS_ACCESS_KEY_ID=", { "Ref": "AWSAccessKeyId" }, "' >> /home/ec2-user/.bashrc\n",
               "echo 'export AWS_SECRET_ACCESS_KEY=", { "Ref": "AWSSecretAccessKeyId" }, "' >> /home/ec2-user/.bashrc\n",
               "echo '", { "Ref": "Bashrc" }, "' >> /home/ec2-user/.bashrc\n",
+              
               "runuser -l ec2-user -c 'naught start /microservice/current/index.js'\n",
 
               "/opt/aws/bin/cfn-signal -e $? ",
