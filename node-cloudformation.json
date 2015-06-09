@@ -29,6 +29,12 @@
       "Type": "String",
       "ConstraintDescription": "must be the secret access key id of a valid IAM User."
     },
+    "AWSDefaultRegion": {
+      "Description": "The AWS region set AWS_DEFAULT_REGION to",
+      "Type": "String",
+      "Default": "eu-west-1",
+      "ConstraintDescription": "must be a valid AWS region."
+    },
     "KeyName": {
       "Description": "The EC2 Key Pair to allow SSH access to the instances",
       "Type": "AWS::EC2::KeyPair::KeyName",
@@ -460,6 +466,7 @@
               "\n",
               
               "echo 'export NODE_ENV=production' >> /home/ec2-user/.bashrc\n",
+              "echo 'export AWS_DEFAULT_REGION=", { "Ref": "AWSDefaultRegion" }, "' >> /home/ec2-user/.bashrc\n",
               "echo 'export AWS_ACCESS_KEY_ID=", { "Ref": "AWSAccessKeyId" }, "' >> /home/ec2-user/.bashrc\n",
               "echo 'export AWS_SECRET_ACCESS_KEY=", { "Ref": "AWSSecretAccessKeyId" }, "' >> /home/ec2-user/.bashrc\n",
               "echo '", { "Ref": "Bashrc" }, "' >> /home/ec2-user/.bashrc\n",
