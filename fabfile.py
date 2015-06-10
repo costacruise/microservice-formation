@@ -26,6 +26,6 @@ def deploy():
 def switch():
   run('ln -sfn /microservice/' + env.sha + ' /microservice/current')
   run('naught deploy')
-  with cd('/microservice/' + env.sha):
+  with cd('/microservice/'):
     with settings(warn_only=True):
       run('ls -t | tail -n +8 | xargs sudo rm -r')
