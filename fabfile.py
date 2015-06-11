@@ -28,4 +28,4 @@ def switch():
   run('naught deploy')
   with cd('/microservice/'):
     with settings(warn_only=True):
-      run('ls -t | tail -n +8 | xargs sudo rm -vrf')
+      run('ls -t | tail -n +8 | xargs sudo rm -rf')
